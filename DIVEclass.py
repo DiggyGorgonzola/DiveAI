@@ -8,16 +8,16 @@ class DIVE():
         [0,0,0,0],
         [0,0,0,0]
     ], score=0, changed=False):
-        self.grid = grid
+        self.grid=grid
         self.score=score
         self.changed=changed
+    def __repr__(self):
+        return self.grid
     def pretty_print(grid):
         for i in range(4):
             for j in range(4):
                 print(grid[i][j], end=", ")
             print("\n")
-    def __repr__(self):
-        return self.grid
     def self_pp(self):
         DIVE.pretty_print(self.grid)
     '''AI methods'''
@@ -119,3 +119,4 @@ arr = [
     ]
 A = DIVE(grid=arr)
 DIVE.pretty_print(DIVE.move_up(A.grid)[0])
+A.move("u").self_pp()
