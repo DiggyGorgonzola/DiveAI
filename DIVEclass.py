@@ -16,6 +16,10 @@ class DIVE():
             for j in range(4):
                 print(grid[i][j], end=", ")
             print("\n")
+    def __repr__(self):
+        return self.grid
+    def self_pp(self):
+        DIVE.pretty_print(self.grid)
     '''AI methods'''
     def merges(a,b):
         return (True,min(a,b)) if math.gcd(a,b) in [a,b] else (False,0)
@@ -105,10 +109,7 @@ class DIVE():
         grid[position[0]][position[1]] = new_tile
         return grid
     def reset_grid(self):
-        new_grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
-        new_grid = DIVE.add_new_tile(new_grid)
-        new_grid = DIVE.add_new_tile(new_grid)
-        self.grid = new_grid
+        self.grid = DIVE.add_new_tile(DIVE.add_new_tile([[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]))
 '''-=- testing zone ^w^ -=-'''
 arr = [
         [4,2,4,2],
