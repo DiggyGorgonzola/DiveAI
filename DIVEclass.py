@@ -139,6 +139,13 @@ class DIVE():
                         if grid[j][k]//i not in new_seeds and grid[j][k]//i != 1:
                             new_seeds.append(grid[j][k]//i)
         return new_seeds
+    def get_largest_tile(self):
+        lt = 0
+        for i in range(4)
+            for j in range(4):
+                if self.grid[i][j] > lt:
+                    lt = self.grid[i][j]
+        return lt
     def user_play(self, wasd_mode=True):
         while len(DIVE.get_zeros(self.grid)) > 0:
             if not wasd_mode:
