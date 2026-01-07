@@ -76,12 +76,39 @@ class DIVE():
         new_grid, changed, new_score = DIVE.move_left(new_grid)
         new_grid = DIVE.transpose_grid(new_grid)
         return new_grid, changed, new_score
-    def move_up(grid):
+    def move_down(grid):
         new_grid = DIVE.transpose_grid(grid)
         new_grid, changed, new_score = DIVE.move_right(new_grid)
         new_grid = DIVE.transpose_grid(new_grid)
         return new_grid, changed, new_score
 
+    '''untested shiz'''
+    def move(self, move="l"):
+        a = {
+            "l":DIVE.move_left(self.grid)
+            "r":DIVE.move_right(self.grid)
+            "u":DIVE.move_up(self.grid)
+            "d":DIVE.move_down(self.grid)
+        }[move]
+        self.grid, changed = a[0], a[1]
+        self.score += a[2]
+    def get_pos_zeros(grid):
+        # REMEMBER THAT POS IS (y,x)
+        pos = []
+        for i in range(4):
+            for j in range(4):
+                if grid[i][j] = 0:
+                    pos.append((i,j))
+        return pos
+    def add_new_tile(grid, new_tile=2):
+        position = random.choice(DIVE.get_pos_zeros(grid))
+        grid[position[0]][position[1]] = new_tile
+        return grid
+    def reset_grid(self):
+        new_grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        new_grid = DIVE.add_new_tile(new_grid)
+        new_grid = DIVE.add_new_tile(new_grid)
+        self.grid = new_grid
 '''-=- testing zone ^w^ -=-'''
 arr = [
         [4,2,4,2],
