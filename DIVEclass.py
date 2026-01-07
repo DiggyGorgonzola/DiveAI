@@ -18,14 +18,12 @@ class DIVE():
             for j in range(4):
                 print(grid[i][j], end=", ")
             print("\n")
-    '''untested'''
     def self_pp(self):
-        DIVE.pretty_print(self)
-    '''AI methods'''
-    def merges(a,b):
-        return (True,min(a,b)) if math.gcd(a,b) in [a,b] else (False,0)
+        DIVE.pretty_print(self.grid)
     
     '''Movement logic methods'''
+    def merges(a,b):
+        return (True,min(a,b)) if math.gcd(a,b) in [a,b] else (False,0)
     def compress_grid(grid):
         changed = False
         new_grid = [[0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0]]
