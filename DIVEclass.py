@@ -27,12 +27,16 @@ class DIVE():
         RED = '\033[31m'
         GREEN = '\033[32m'
         CYAN = '\033[36m'
+        GREY = '\033[90m'
+        LG = '\033[37m'
         RESET = '\033[0m'
         for i in range(4):
             for j in range(4):
                 hehe = DIVE.get_prime_factors(grid[i][j])
                 if grid[i][j] == 0:
-                    print(RESET + str(grid[i][j]) + RESET, end=", ")
+                    print(GREY + str(grid[i][j]) + RESET, end=", ")
+                elif hehe[2] == hehe[3] == hehe[5] == 0:
+                    print(LG + str(grid[i][j]) + RESET, end=", ")
                 elif max(hehe, key=hehe.get) == 5:
                     print(CYAN + str(grid[i][j]) + RESET, end=", ")
                 elif max(hehe, key=hehe.get) == 3:
@@ -107,8 +111,6 @@ class DIVE():
 
                     newprimes = self.extractNewPrimes(grid[i][j]+grid[i][j+1])
                     newprimes = sorted(list(set(newprimes)))
-                    self.seeds += newprimes
-                    self.seeds = [seed for seed in self.seeds if seed != 1]
                     grid[i][j] = grid[i][j] + grid[i][j+1]
                     grid[i][j+1] = 0
                     changed = True
@@ -162,10 +164,12 @@ class DIVE():
             "d": self.move_down
         }[move]
 
-        new_grid, changed, score, _ = func()
+        new_grid, changed, score, newprimes = func()
         self.grid = new_grid
         self.changed = changed
         self.score += score
+        self.seeds += newprimes
+        self.seeds = [seed for seed in self.seeds if seed != 1]
         return self
     
     '''other stuff'''
@@ -208,7 +212,7 @@ class DIVE():
                 DIVE.add_new_tile(self.grid, random.choice(self.seeds))
                 self.self_pp()
 
-'''-=- testing zone ^w^ -=-'''
+'''-=- testing zone ^w^ -=-
 arr = [
         [0,0,0,0],
         [0,0,0,0],
@@ -218,4 +222,4 @@ arr = [
 A = DIVE(grid=arr, name="DIVE", seeds=[2])
 A.reset_grid()
 A.self_pp()
-A.user_play()
+A.user_play()'''
