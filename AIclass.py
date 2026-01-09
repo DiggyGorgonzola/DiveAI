@@ -33,7 +33,7 @@ class AI():
     for i in range(len(self.weights)):
       child_weights[i] += juvenoia*(random.random()-1/2)
       
-    return AI(weights=child_weights, name=self.name+f".child{round(random.random(),3)}", parent=self, dive=DIVE.NEW())
+    return AI(weights=child_weights, name=self.name+f".child{100*round(random.random(),3)}", parent=self, dive=DIVE.NEW())
   def run_till_death(self):
     while len(DIVE.get_zeros(self.dive.grid)) > 0:
       self.step()
