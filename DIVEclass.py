@@ -90,7 +90,17 @@ class DIVE():
                 stack.append((temp, idx + 1))
 
         return min_value
-
+    def fixSeeds(self):
+        new_seeds = []
+        add_score = 0
+        for seed in self.seeds:
+            for i in range(4):
+                for j in range(4):
+                    if self.grid[i][j] != 0 and self.grid[i][j] % seed == 0:
+                        new_seeds.append(seed)
+            if seed not in new_seeds:
+                add_score += seed
+        return list(set(new_seeds)), add_score
 
 
         
@@ -99,21 +109,21 @@ class DIVE():
         if n > 0:
             return [n]
         return []
-
-
     def merge_grid(self, grid):
         changed = False
         add_score = 0
+        newprimes = []
         for i in range(4):
-            for j in range(3):
+            for j in range(0,3):
                 if DIVE.merges(grid[i][j], grid[i][j+1])[0]:
                     add_score += DIVE.merges(grid[i][j], grid[i][j+1])[1]
 
-                    newprimes = self.extractNewPrimes(grid[i][j]+grid[i][j+1])
-                    newprimes = sorted(list(set(newprimes)))
+                    newprimes += self.extractNewPrimes(grid[i][j]+grid[i][j+1])
                     grid[i][j] = grid[i][j] + grid[i][j+1]
                     grid[i][j+1] = 0
                     changed = True
+        print(newprimes)
+        newprimes = sorted(list(set(newprimes)))
         return grid, changed, add_score, newprimes
     def reverse_grid(grid):
         new_grid = []
@@ -170,6 +180,8 @@ class DIVE():
         self.score += score
         self.seeds += newprimes
         self.seeds = [seed for seed in self.seeds if seed != 1]
+        self.seeds, add_score = self.fixSeeds()
+        self.score += add_score
         return self
     
     '''other stuff'''
@@ -212,7 +224,7 @@ class DIVE():
                 DIVE.add_new_tile(self.grid, random.choice(self.seeds))
                 self.self_pp()
 
-'''-=- testing zone ^w^ -=-
+'''-=- testing zone ^w^ -=-'''
 arr = [
         [0,0,0,0],
         [0,0,0,0],
@@ -222,4 +234,4 @@ arr = [
 A = DIVE(grid=arr, name="DIVE", seeds=[2])
 A.reset_grid()
 A.self_pp()
-A.user_play()'''
+A.user_play()
