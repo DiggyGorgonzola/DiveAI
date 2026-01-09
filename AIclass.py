@@ -39,7 +39,7 @@ class AI():
       self.step()
     return self
 
-class The_Tormenter():
+class TheTormenter():
   g_first = []
   g_first_scores = {}
   g_next = []
@@ -63,11 +63,11 @@ class The_Tormenter():
 '''-=- testing zone -=- :3'''
 
 guh = AI([100,50,-50,10,20], parent=None, dive=DIVE.NEW())
-TT = The_Tormenter([guh, guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth()])
+TT = TheTormenter([guh, guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth()])
 while True:
   print(TT.TORMENT())
   winner = TT.POPULATE()
-  print("WINNER:",winner.name,"\nWEIGHTS:",winner.weights)
+  print("WINNER:",winner.name,"\nWEIGHTS:",winner.weights "\nSCORE:",winner.score)
   guh = winner
-  TT = The_Tormenter([guh, guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth()])
+  TT = TheTormenter(TT.g_next)
   time.sleep(1)
