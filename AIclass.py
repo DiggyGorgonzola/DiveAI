@@ -64,6 +64,10 @@ class The_Tormenter():
 
 guh = AI([100,50,-50,10,20], parent=None, dive=DIVE.NEW())
 TT = The_Tormenter([guh, guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth()])
-print(TT.TORMENT())
-winner = TT.POPULATE()
-print("WINNER:",winner.name,"\nWEIGHTS:",winner.weights)
+while True:
+  print(TT.TORMENT())
+  winner = TT.POPULATE()
+  print("WINNER:",winner.name,"\nWEIGHTS:",winner.weights)
+  guh = winner
+  TT = The_Tormenter([guh, guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth(), guh.give_birth()])
+  time.sleep(1)
