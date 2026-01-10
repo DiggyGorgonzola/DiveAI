@@ -122,7 +122,6 @@ class DIVE():
                     grid[i][j] = grid[i][j] + grid[i][j+1]
                     grid[i][j+1] = 0
                     changed = True
-        print(newprimes)
         newprimes = sorted(list(set(newprimes)))
         return grid, changed, add_score, newprimes
     def reverse_grid(grid):
@@ -139,7 +138,17 @@ class DIVE():
             for j in range(4):
                 new_grid[i].append(grid[j][i])
         return new_grid
-    
+    def get_num_merges(self):
+        merges = 0
+        for i in range(4):
+            for j in range(3):
+                if self.grid[i][j] != 0 and DIVE.merges(self.grid[i][j],self.grid[i][j+1]):
+                    merges += 1
+        for i in range(3):
+            for j in range(4):
+                if self.grid[i][j] != 0 and DIVE.merges(self.grid[i+1][j],self.grid[i][j]):
+                    merges += 1
+        return merges
     def move_left(self):
         new_grid, changed1 = DIVE.compress_grid(self.grid)
         new_grid, changed2, new_score, newPrimes = self.merge_grid(new_grid)
@@ -200,6 +209,8 @@ class DIVE():
     def reset_grid(self):
         self.grid = DIVE.add_new_tile(DIVE.add_new_tile([[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]))
         return self
+    def NEW():
+        return DIVE(seeds=[2]).reset_grid()
     
     
     def get_largest_tile(self):
@@ -224,7 +235,7 @@ class DIVE():
                 DIVE.add_new_tile(self.grid, random.choice(self.seeds))
                 self.self_pp()
 
-'''-=- testing zone ^w^ -=-'''
+'''-=- testing zone ^w^ -=-
 arr = [
         [0,0,0,0],
         [0,0,0,0],
@@ -234,4 +245,4 @@ arr = [
 A = DIVE(grid=arr, name="DIVE", seeds=[2])
 A.reset_grid()
 A.self_pp()
-A.user_play()
+A.user_play();'''
