@@ -14,7 +14,7 @@ class DIVE():
         self.name = name
         self.seeds = seeds
     def __repr__(self):
-        return self.grid
+        return f"{self.name}"
 
     def get_prime_factors(n):
         facts = {5:0,3:0,2:0}
@@ -113,16 +113,21 @@ class DIVE():
         changed = False
         add_score = 0
         newprimes = []
-        for i in range(4):
-            for j in range(0,3):
-                if DIVE.merges(grid[i][j], grid[i][j+1])[0]:
-                    add_score += DIVE.merges(grid[i][j], grid[i][j+1])[1]
 
-                    newprimes += self.extractNewPrimes(grid[i][j]+grid[i][j+1])
-                    grid[i][j] = grid[i][j] + grid[i][j+1]
+        for i in range(4):
+            for j in range(3):  # no out-of-bounds
+                a = grid[i][j]
+                b = grid[i][j+1]
+
+                can_merge, score = DIVE.merges(a, b)
+                if can_merge:
+                    add_score += score
+                    newprimes += self.extractNewPrimes(a + b)
+
+                    grid[i][j] = a + b
                     grid[i][j+1] = 0
                     changed = True
-        newprimes = sorted(list(set(newprimes)))
+
         return grid, changed, add_score, newprimes
     def reverse_grid(grid):
         new_grid = []
@@ -138,17 +143,42 @@ class DIVE():
             for j in range(4):
                 new_grid[i].append(grid[j][i])
         return new_grid
+    def get_tile_merges(grid, X,Y):
+        tile = grid[Y][X]
+        mergers = 0
+
+        gaze = (Y-1,X)
+        while gaze[0] >= 0 and grid[gaze[0]][gaze[1]] == 0:
+            gaze = (gaze[0]-1, gaze[1])
+        if gaze[0] >= 0 and DIVE.merges(tile, grid[gaze[0]][gaze[1]])[0]:
+            mergers+=1
+
+        gaze = (Y+1,X)
+        while gaze[0] <= 3 and grid[gaze[0]][gaze[1]] == 0:
+            gaze = (gaze[0]+1, gaze[1])
+        if gaze[0] <= 3 and DIVE.merges(tile, grid[gaze[0]][gaze[1]])[0]:
+            mergers+=1
+
+        
+        gaze = (Y,X-1)
+        while gaze[1] >= 0 and grid[gaze[0]][gaze[1]] == 0:
+            gaze = (gaze[0], gaze[1]-1)
+        if gaze[1] >= 0 and DIVE.merges(tile, grid[gaze[0]][gaze[1]])[0]:
+            mergers+=1
+
+        gaze = (Y,X+1)
+        while gaze[1] <= 3 and grid[gaze[0]][gaze[1]] == 0:
+            gaze = (gaze[0], gaze[1]+1)
+        if gaze[1] <= 3 and DIVE.merges(tile, grid[gaze[0]][gaze[1]])[0]:
+            mergers+=1
+        return mergers
     def get_num_merges(self):
-        merges = 0
+        mergers = 0
         for i in range(4):
-            for j in range(3):
-                if self.grid[i][j] != 0 and DIVE.merges(self.grid[i][j],self.grid[i][j+1]):
-                    merges += 1
-        for i in range(3):
             for j in range(4):
-                if self.grid[i][j] != 0 and DIVE.merges(self.grid[i+1][j],self.grid[i][j]):
-                    merges += 1
-        return merges
+                if self.grid[i][j] != 0:
+                    mergers += DIVE.get_tile_merges(self.grid, i,j)
+        return mergers
     def move_left(self):
         new_grid, changed1 = DIVE.compress_grid(self.grid)
         new_grid, changed2, new_score, newPrimes = self.merge_grid(new_grid)
@@ -182,15 +212,15 @@ class DIVE():
             "u": self.move_up,
             "d": self.move_down
         }[move]
-
         new_grid, changed, score, newprimes = func()
-        self.grid = new_grid
-        self.changed = changed
-        self.score += score
-        self.seeds += newprimes
-        self.seeds = [seed for seed in self.seeds if seed != 1]
-        self.seeds, add_score = self.fixSeeds()
-        self.score += add_score
+        if changed:
+            self.grid = new_grid
+            self.changed = changed
+            self.score += score
+            self.seeds += newprimes
+            self.seeds = [seed for seed in self.seeds if seed != 1]
+            self.seeds, add_score = self.fixSeeds()
+            self.score += add_score
         return self
     
     '''other stuff'''
@@ -202,9 +232,28 @@ class DIVE():
                 if grid[i][j] == 0:
                     pos.append((i,j))
         return pos
+    def get_zeros_next_to_tile(grid, X,Y):
+        adjacents = [(Y,X)]
+        for i in range(10):
+            for j in adjacents:
+                new_adj = []
+                if j[0] > 0 and (j[0]-1,j[1]) not in adjacents and grid[j[0]-1][j[1]] == 0:
+                    new_adj.append((j[0]-1,j[1]))
+                if j[1] > 0 and (j[0],j[1]-1) not in adjacents and grid[j[0]][j[1]-1] == 0:
+                    new_adj.append((j[0],j[1]-1))
+                if j[0] < 3 and (j[0]+1,j[1]) not in adjacents and grid[j[0]+1][j[1]] == 0:
+                    new_adj.append((j[0]+1,j[1]))
+                if j[1] < 3 and (j[0],j[1]+1) not in adjacents and grid[j[0]][j[1]+1] == 0:
+                    new_adj.append((j[0],j[1]+1))
+            adjacents += new_adj
+        adjacents.remove((Y,X))
+        return adjacents
     def add_new_tile(grid, new_tile=2):
-        position = random.choice(DIVE.get_zeros(grid))
-        grid[position[0]][position[1]] = new_tile
+        try:
+            position = random.choice(DIVE.get_zeros(grid))
+            grid[position[0]][position[1]] = new_tile
+        except IndexError:
+            pass
         return grid
     def reset_grid(self):
         self.grid = DIVE.add_new_tile(DIVE.add_new_tile([[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]))
@@ -218,31 +267,40 @@ class DIVE():
         for i in range(4):
             for j in range(4):
                 if self.grid[i][j] > lt:
-                    lt = self.grid[i][j]
+                    lt = self.grid[i][ j]
         return lt
+    def get_pos_largest_tile(self):
+        lt = 0
+        lt_pos = (0,0)
+        for i in range(4):
+            for j in range(4):
+                if self.grid[i][j] > lt:
+                    lt = self.grid[i][j]
+                    lt_pos = (i,j)
+        return lt_pos
     def user_play(self, wasd_mode=True):
         while len(DIVE.get_zeros(self.grid)) > 0:
             if not wasd_mode:
                 while (x:=input()) not in ["l","r","u","d"]:
                     pass
                 self.move(x)
-                DIVE.add_new_tile(self.grid, random.choice(self.seeds))
-                self.self_pp()
             else:
                 while (x:=input()) not in ["w","a","s","d"]:
                     pass
                 self.move({"w":"u","a":"l","s":"d","d":"r"}[x])
-                DIVE.add_new_tile(self.grid, random.choice(self.seeds))
-                self.self_pp()
+            self.fixSeeds()
+            DIVE.add_new_tile(self.grid, random.choice(self.seeds))
+            self.self_pp()
 
-'''-=- testing zone ^w^ -=-
-arr = [
-        [0,0,0,0],
-        [0,0,0,0],
-        [0,0,0,0],
-        [0,0,0,0]
-    ]
-A = DIVE(grid=arr, name="DIVE", seeds=[2])
-A.reset_grid()
-A.self_pp()
-A.user_play();'''
+'''-=- testing zone ^w^ -=-'''
+if __name__ == "__main__":
+    arr = [
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0],
+            [0,0,0,0]
+        ]
+    A = DIVE(grid=arr, name="DIVE", seeds=[2])
+    A.reset_grid()
+    A.self_pp()
+    A.user_play()
