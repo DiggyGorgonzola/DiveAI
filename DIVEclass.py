@@ -15,6 +15,12 @@ class DIVE():
         self.seeds = seeds
     def __repr__(self):
         return f"{self.name}"
+    def listify(self):
+        listifyy = []
+        for i in range(4):
+            for j in range(4):
+                listifyy.append(self.grid[i][j])
+        return listifyy
 
     def get_prime_factors(n):
         facts = {5:0,3:0,2:0}
