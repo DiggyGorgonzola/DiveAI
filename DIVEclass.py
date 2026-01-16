@@ -20,7 +20,7 @@ class DIVE():
         for i in range(4):
             for j in range(4):
                 listifyy.append(self.grid[i][j])
-        return listifyy
+        return listifyy 
 
     def get_prime_factors(n):
         facts = {5:0,3:0,2:0}
@@ -62,7 +62,7 @@ class DIVE():
     
     '''Movement logic methods'''
     def merges(a,b):
-        return (True,min(a,b)) if math.gcd(a,b) in [a,b] else (False,0)
+        return (True,min(a,b)) if (math.gcd(a,b) in [a,b] and a != 0 and b != 0) else (False,0)
     def compress_grid(grid):
         changed = False
         new_grid = [[0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0]]
