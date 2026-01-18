@@ -15,6 +15,14 @@ class DIVE():
         self.seeds = seeds
     def __repr__(self):
         return f"{self.name}"
+    def copy(self):
+        return DIVE(
+            grid=[row[:] for row in self.grid],
+            changed=self.changed,
+            score=self.score,
+            seeds=self.seeds[:],
+            name=self.name
+        )
     def listify(self):
         listifyy = []
         for i in range(4):
