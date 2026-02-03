@@ -23,6 +23,14 @@ class DIVE():
             seeds=self.seeds[:],
             name=self.name
         )
+    def randomDive():
+        return DIVE(
+            grid=[[random.randrange(0,10) if random.random() < .5 else 0 for _ in range(4)] for he in range(4)],
+            changed = False,
+            score = 0,
+            seeds = [2],
+            name = "random dive object"
+        )
     def listify(self):
         listifyy = []
         for i in range(4):
@@ -37,6 +45,20 @@ class DIVE():
                 n //= i
                 facts[i]+=1
         return facts
+    def CUFOB(self):
+        x = self.listify()
+        g = 0
+        for i in x:
+            j = i
+            n = 2
+            while n <= i:
+                if j % n == 0:
+                    g += 1
+                while j % n == 0:
+                    j //= n
+                n += 1
+        return g
+                 
     def pretty_print(grid):
         RED = '\033[31m'
         GREEN = '\033[32m'
@@ -194,31 +216,31 @@ class DIVE():
                     mergers += DIVE.get_tile_merges(self.grid, i,j)
         return mergers
     def move_left(self):
-        new_grid, changed1 = DIVE.compress_grid(self.grid)
-        new_grid, changed2, new_score, newPrimes = self.merge_grid(new_grid)
+        self.grid, changed1 = DIVE.compress_grid(self.grid)
+        self.grid, changed2, new_score, newPrimes = self.merge_grid(self.grid)
         changed = changed1 or changed2
-        new_grid = DIVE.compress_grid(new_grid)[0]
-        return new_grid, changed, new_score, newPrimes
+        self.grid = DIVE.compress_grid(self.grid)[0]
+        return self.grid, changed, new_score, newPrimes
     
     def move_right(self):
         self.grid = DIVE.reverse_grid(self.grid)
-        new_grid, changed, score, primes = self.move_left()
-        new_grid = DIVE.reverse_grid(new_grid)
-        return new_grid, changed, score, primes
+        self.grid, changed, score, primes = self.move_left()
+        self.grid = DIVE.reverse_grid(self.grid)
+        return self.grid, changed, score, primes
 
     def move_up(self):
         self.grid = DIVE.transpose_grid(self.grid)
-        new_grid, changed, score, primes = self.move_left()
-        new_grid = DIVE.transpose_grid(new_grid)
-        return new_grid, changed, score, primes
+        self.grid, changed, score, primes = self.move_left()
+        self.grid = DIVE.transpose_grid(self.grid)
+        return self.grid, changed, score, primes
 
     def move_down(self):
         self.grid = DIVE.transpose_grid(self.grid)
         self.grid = DIVE.reverse_grid(self.grid)
-        new_grid, changed, score, primes = self.move_left()
-        new_grid = DIVE.reverse_grid(new_grid)
-        new_grid = DIVE.transpose_grid(new_grid)
-        return new_grid, changed, score, primes
+        self.grid, changed, score, primes = self.move_left()
+        self.grid = DIVE.reverse_grid(self.grid)
+        self.grid = DIVE.transpose_grid(self.grid)
+        return self.grid, changed, score, primes
     def move(self, move="l"):
         func = {
             "l": self.move_left,
@@ -292,6 +314,10 @@ class DIVE():
                     lt = self.grid[i][j]
                     lt_pos = (i,j)
         return lt_pos
+    def prepare(self):
+        self.fixSeeds()
+        DIVE.add_new_tile(self.grid, random.choice(self.seeds))
+        return self
     def user_play(self, wasd_mode=True):
         while len(DIVE.get_zeros(self.grid)) > 0:
             if not wasd_mode:
@@ -302,8 +328,7 @@ class DIVE():
                 while (x:=input()) not in ["w","a","s","d"]:
                     pass
                 self.move({"w":"u","a":"l","s":"d","d":"r"}[x])
-            self.fixSeeds()
-            DIVE.add_new_tile(self.grid, random.choice(self.seeds))
+            self.prepare()
             self.self_pp()
 
 '''-=- testing zone ^w^ -=-'''
