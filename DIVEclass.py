@@ -218,29 +218,29 @@ class DIVE():
     def move_left(self):
         self.grid, changed1 = DIVE.compress_grid(self.grid)
         self.grid, changed2, new_score, newPrimes = self.merge_grid(self.grid)
-        changed = changed1 or changed2
+        self.changed = changed1 or changed2
         self.grid = DIVE.compress_grid(self.grid)[0]
-        return self.grid, changed, new_score, newPrimes
+        return self.grid, self.changed, new_score, newPrimes
     
     def move_right(self):
         self.grid = DIVE.reverse_grid(self.grid)
-        self.grid, changed, score, primes = self.move_left()
+        self.grid, self.changed, score, primes = self.move_left()
         self.grid = DIVE.reverse_grid(self.grid)
-        return self.grid, changed, score, primes
+        return self.grid, self.changed, score, primes
 
     def move_up(self):
         self.grid = DIVE.transpose_grid(self.grid)
-        self.grid, changed, score, primes = self.move_left()
+        self.grid, self.changed, score, primes = self.move_left()
         self.grid = DIVE.transpose_grid(self.grid)
-        return self.grid, changed, score, primes
+        return self.grid, self.changed, score, primes
 
     def move_down(self):
         self.grid = DIVE.transpose_grid(self.grid)
         self.grid = DIVE.reverse_grid(self.grid)
-        self.grid, changed, score, primes = self.move_left()
+        self.grid, self.changed, score, primes = self.move_left()
         self.grid = DIVE.reverse_grid(self.grid)
         self.grid = DIVE.transpose_grid(self.grid)
-        return self.grid, changed, score, primes
+        return self.grid, self.changed, score, primes
     def move(self, move="l"):
         func = {
             "l": self.move_left,
@@ -315,8 +315,9 @@ class DIVE():
                     lt_pos = (i,j)
         return lt_pos
     def prepare(self):
-        self.fixSeeds()
-        DIVE.add_new_tile(self.grid, random.choice(self.seeds))
+        if self.changed:
+            self.fixSeeds()
+            DIVE.add_new_tile(self.grid, random.choice(self.seeds))
         return self
     def user_play(self, wasd_mode=True):
         while len(DIVE.get_zeros(self.grid)) > 0:
@@ -330,6 +331,7 @@ class DIVE():
                 self.move({"w":"u","a":"l","s":"d","d":"r"}[x])
             self.prepare()
             self.self_pp()
+            print("CHANGED:", self.changed)
 
 '''-=- testing zone ^w^ -=-'''
 if __name__ == "__main__":
