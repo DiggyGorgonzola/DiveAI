@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DIVE AI
 // @namespace    http://tampermonkey.net/
-// @version      2026-03-10
+// @version      2026-03-12
 // @description  a simple AI for the game Dive
 // @author       Gracie 417
 // @match        https://alexfink.github.io/dive/
@@ -750,11 +750,10 @@ window.replay = function (rpstr, delay) {
     const interval = setInterval(() => {
         let info = moves[count].split(",");
         let move = Number(info[0]);
-        let tile = new Tile({x:Number(info[1]),y:Number(info[2])},info[3]);
-        console.log(tile)
+        let tile = new Tile({x:Number(info[1]),y:Number(info[2])},Number(info[3]));
         window.replayMove(window.game, move);
-        window.game.actuate();
         window.game.grid.insertTile(tile);
+        window.game.actuate()
         count++
         if (count >= moves.length-1) {
             clearInterval(interval)
