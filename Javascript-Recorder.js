@@ -1,15 +1,43 @@
 // ==UserScript==
 // @name         DIVE recorder
 // @namespace    http://tampermonkey.net/
-// @version      2026-03-12
+// @version      2026-03-14
 // @description  a recording system for DIVE
 // @author       Gracie 417
 // @match        https://alexfink.github.io/dive/
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=github.io
+// @icon         https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTne--odO5x8GYoGxFsM2QuH4Bztd1hoCfDOokTCY9ZhYUadMGFHqwNoO4k98j6HMahikkBWCQ3FnBB6qOuSM5VoV1zfwVB1_hHTu72flXEQg&s=10
 // @grant        none
 // ==/UserScript==
+console.log(`
+-=-DIVE replay system-=-
 
-// STUFF FOR REPLAYS
+window.replay(delay, rpstr):
+    Plays back the replay provided
+    - delay is how many milliseconds between each move
+    - rprstr is the replay string
+
+window.showReplay():
+    Prints to the console the current game's replay string
+
+`);
+var replay_string = "";
+var string_a = "";
+var string_b = "";
+
+const box = document.createElement("div");
+box.innerText = replay_string;
+
+box.style.position = "fixed";
+box.style.bottom = "20px";
+box.style.right = "20px";
+box.style.padding = "15px";
+box.style.background = "#bbada0";
+box.style.color = "#fff";
+box.style.borderRadius = "10px";
+box.style.zIndex = "9999";
+box.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+
+document.body.appendChild(box);
 
 window.replayMove = function (board, direction) {
     // 0: up, 1: right, 2:down, 3: left
@@ -159,20 +187,106 @@ window.replayMove = function (board, direction) {
   } // if (moved)
 };
 
-window.replay = function (rpstr, delay) {
+window.replay = function (delay, rpstr) {
     const moves = rpstr.split(";");
     let count = 0
-
+    let gameReplay = new GameManager(4, KeyboardInputManager, HTMLActuator, LocalScoreManager);
+    gameReplay.grid.cells = [
+        [null,null,null,null],
+        [null,null,null,null],
+        [null,null,null,null],
+        [null,null,null,null],
+        ]
+    var k = moves[0].split(",");
+    for (var i = 0; i <= k.length/2; i += 2) {
+        var x = k[i]
+        var y = k[i+1]
+        gameReplay.grid.insertTile(new Tile({x:Number(x),y:Number(y)},2));
+    };
     const interval = setInterval(() => {
-        let info = moves[count].split(",");
-        let move = Number(info[0]);
-        let tile = new Tile({x:Number(info[1]),y:Number(info[2])},Number(info[3]));
-        window.replayMove(window.game, move);
-        window.game.grid.insertTile(tile);
-        window.game.actuate()
         count++
         if (count >= moves.length-1) {
             clearInterval(interval)
-        }}, delay);
+            return
+        }
+        let info = moves[count].split(",");
+        let move = Number(info[0]);
+        let tile = new Tile({x:Number(info[1]),y:Number(info[2])},Number(info[3]));
+        window.replayMove(gameReplay, move);
+
+
+        gameReplay.grid.insertTile(tile);
+        gameReplay.actuate()
+        }, delay);
 };
 
+
+function GameWrapper() {
+    if (!window.game) {
+        requestAnimationFrame(GameWrapper);
+        return
+    }
+    const originalMove = window.game.move;
+    const originalART = window.game.addRandomTile;
+    window.game.move = function (...args) {
+        if (!window.game.over && !window.game.won) {
+            var grid_before = []
+            for (var x = 0; x < window.game.grid.cells.length; x++) {
+                grid_before.push([]);
+                for (var y = 0; y < window.game.grid.cells[x].length; y++) {
+                    grid_before[x].push(window.game.grid.cells[x][y]);
+                };
+            };
+            originalMove.apply(this, args);
+            var moved = false;
+            window.game.grid.eachCell(function (x,y,tile) {
+                if (grid_before[x][y] !== window.game.grid.cells[x][y]) {
+                    moved = true;
+                }
+            });
+
+            //console.log("MOVED: ",moved);
+
+            if (moved) {
+                string_a = `${args[0]},`;
+                replay_string += string_a
+                replay_string += string_b
+            }
+        }
+        //console.log(replay_string);
+        if (window.game.over || window.game.won) {
+            console.log(`REPLAY STRING:\n\n${replay_string}`)
+        }
+    };
+    window.game.addRandomTile = function () {
+        var a = window.game.grid.randomAvailableCell()
+        var value = window.game.tileTypes[Math.floor(Math.random() * window.game.tileTypes.length)];
+        var tile = new Tile(a, value);
+        window.game.grid.insertTile(tile);
+        string_b = `${a.x},${a.y},${value};`;
+    };
+    window.game.addStartTiles = function () {
+        var tempstring = "";
+        for (var i = 0; i < window.game.startTiles; i++) {
+            var a = window.game.grid.randomAvailableCell()
+            var value = window.game.tileTypes[Math.floor(Math.random() * window.game.tileTypes.length)];
+            var tile = new Tile(a, value);
+            tempstring += `${a.x},${a.y}`;
+            window.game.grid.insertTile(tile);
+            if (i < window.game.startTiles - 1) {
+                tempstring += ",";
+            };
+        }
+        tempstring += ";";
+        replay_string += tempstring;
+    };
+
+    window.game.restart();
+    window.game.inputManager.events.move = [];
+    window.game.inputManager.on("move", window.game.move.bind(window.game));
+};
+GameWrapper();
+
+window.showReplay = function () {
+    console.log(replay_string);
+};
