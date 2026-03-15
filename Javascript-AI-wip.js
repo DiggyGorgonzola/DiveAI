@@ -5,9 +5,12 @@
 // @description  a simple AI for the game Dive
 // @author       Gracie 417
 // @match        https://alexfink.github.io/dive/
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=github.io
+// @icon         https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTne--odO5x8GYoGxFsM2QuH4Bztd1hoCfDOokTCY9ZhYUadMGFHqwNoO4k98j6HMahikkBWCQ3FnBB6qOuSM5VoV1zfwVB1_hHTu72flXEQg&s=10
 // @grant        none
+// @run-at       document-start
 // ==/UserScript==
+
+
 
 window.randomName = function () {
     const f_name = ["Tsa", "Diggy", "ThaAwesome", "Stopside", "Noob", "Nebula", "Gingy", "Amber", "Hephren", "Allu", "Catzee", "Tacocatergy", "NatNat", "Nara"]
@@ -15,6 +18,7 @@ window.randomName = function () {
 };
 window.copyGame = function (copy, name = null, path_add = null) {
     var gamer = new GameManager2(4, KeyboardInputManager, HTMLActuator, LocalScoreManager, copy, name, path_add);
+    gamer.tileTypes = copy.tileTypes;
     return gamer;
 };
 window.copyCurrentGame = function () {
@@ -259,10 +263,50 @@ window.seedEvaluation = function (board) {
                 };
             };
         };
-        incr += window.primeFactors(seed).reduce((a,v)=>a+v,0) / (window.primeFactors(seed).length+1)
+        incr += 100 * window.primeFactors(seed).reduce((a,v)=>a+v,0) / (window.primeFactors(seed).length+1)
     };
     return incr
 };
+
+window.boardEvaluation = function (board) {
+    const seeds = board.tileTypes;
+    var incr = 0;
+    board.grid.eachCell(
+        function (x,y,tile) {
+            if (tile !== null) {
+                var a = window.seedFactors(tile, seeds);
+                if (a == 1) {
+                    incr -= 20;
+                } else if (a < 3) {
+                    incr += 50;
+                } else {
+                    incr -= a*10;
+                }
+            }
+        }
+    );
+    return incr
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -296,17 +340,18 @@ function GameManager2(size, InputManager, Actuator, ScoreManager, copy_from, nam
 };
 GameManager2.prototype.evaluate = function () {
     var evan = 0;
-    evan -= 50 * Math.pow(this.tileTypes.length,2);
-    evan += 10   * Math.max(...this.tileTypes);
-    evan += 100     * window.seedEvaluation(this);
+    evan -= 7      * Math.pow(this.tileTypes.length,3);
+    evan += 2      * Math.max(...this.tileTypes);
+    evan += 5     * window.seedEvaluation(this);
+    evan -= 99999  * this.over;
     for (var x = 0; x < this.grid.cells.length; x++) {
         for (var y = 0; y < this.grid.cells[x].length; y++) {
             var tile = this.grid.cells[x][y];
             if (tile === null) {
-                evan += 20
+                evan += 100
             } else {
-                evan -= 1  * (window.seedFactors(tile,this.tileTypes) - 2);
-                evan += 1  * window.adjacentZeros(tile.x,tile.y,this) * Math.log(tile.value);
+                evan -= 10  * (window.seedFactors(tile.value,this.tileTypes) - 2);
+                evan += 10  * window.adjacentZeros(tile.x,tile.y,this) * Math.log(tile.value);
             };
         };
     };
@@ -586,6 +631,16 @@ GameManager2.prototype.tileMatchesAvailable = function () {
 GameManager2.prototype.positionsEqual = function (first, second) {
   return first.x === second.x && first.y === second.y;
 };
+
+GameManager2.prototype.addRandomTile = function () {
+  if (this.grid.cellsAvailable()) {
+    var value = this.tileTypes[Math.floor(Math.random() * this.tileTypes.length)];
+    var tile = new Tile(this.grid.randomAvailableCell(), value);
+
+    this.grid.insertTile(tile);
+  }
+};
+
 
 
 
