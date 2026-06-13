@@ -23,25 +23,12 @@ window.showReplay():
 var replay_string = "";
 var string_a = "";
 var string_b = "";
-
-const box = document.createElement("div");
-box.innerText = replay_string;
-
-box.style.position = "fixed";
-box.style.bottom = "20px";
-box.style.right = "20px";
-box.style.padding = "15px";
-box.style.background = "#bbada0";
-box.style.color = "#fff";
-box.style.borderRadius = "10px";
-box.style.zIndex = "9999";
-box.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-
-document.body.appendChild(box);
+let gameReplay = new GameManager(4, KeyboardInputManager, HTMLActuator, LocalScoreManager);
 
 window.replayMove = function (board, direction) {
     // 0: up, 1: right, 2:down, 3: left
   var self = board;
+  console.log(board);
 
   if (board.over || board.won) return; // Don't do anything if the game's over
 
@@ -49,7 +36,6 @@ window.replayMove = function (board, direction) {
 
   var vector     = board.getVector(direction);
   var traversals = board.buildTraversals(vector);
-  board.moved     = false;
   var newPrimes  = [];
 
   // Save the current tile positions and remove merger information
@@ -108,14 +94,16 @@ window.replayMove = function (board, direction) {
     // remove duplicates
     if (newPrimes.length >= 2) {
       newPrimes.sort(function (a,b){return a-b});
-      for (var i = newPrimes.length - 2; i >= 0; i--)
-        if (newPrimes[i] == newPrimes[i+1])
+      for (var i = newPrimes.length - 2; i >= 0; i--) {
+        if (newPrimes[i] == newPrimes[i+1]) {
           newPrimes.splice(i,1);
+        }
+      }
     }
     self.tileTypes = self.tileTypes.concat(newPrimes);
   }
 
-  if (this.moved) {
+  if (true) {
     if ((self.gameMode & 1) && newPrimes.length) {
       // in mode 1, score for unlocking
       if ((self.gameMode & 3) == 1) {
@@ -125,8 +113,9 @@ window.replayMove = function (board, direction) {
       self.tilesSeen.push.apply(self.tilesSeen, newPrimes);
 
       var verb = " unlocked!";
-      if (newPrimes.filter(function(x){return x > ominosityBound}).length)
+      if (newPrimes.filter(function(x){return x > ominosityBound}).length) {
         verb = " unleashed!";
+      }
       var list = String(newPrimes.pop());
       if (newPrimes.length) {
         list = newPrimes.join(", ") + " and " + list;
@@ -135,11 +124,12 @@ window.replayMove = function (board, direction) {
       self.actuator.updateCurrentlyUnlocked(self.tileTypes);
     } // mode 1 only
 
-    if ((self.gameMode & 3) == 3) {
+    if (self.gameMode == 3) {
       // Eliminate primes now absent.
       var eliminatedIndices = [];
-      for (var i = 0; i < self.tileTypes.length; i++)
+      for (let i = 0; i < self.tileTypes.length; i++) {
         eliminatedIndices.push(i);
+      }
 
       traversals.x.forEach(function (x) {
         traversals.y.forEach(function (y) {
@@ -147,8 +137,9 @@ window.replayMove = function (board, direction) {
           tile = self.grid.cellContent(cell);
           if (tile) {
             for(var i = 0; i < self.tileTypes.length; i++) {
-              if (tile.value % self.tileTypes[i] == 0)
+              if (tile.value % self.tileTypes[i] == 0) {
                 eliminatedIndices[i] = null;
+              }
             }
           }
         });
@@ -159,10 +150,11 @@ window.replayMove = function (board, direction) {
         var eliminatedPrimes = eliminatedIndices.map(function (x) {return self.tileTypes[x]});
         self.score += eliminatedPrimes.reduce(function(x,y){return x+y});
 
-        var verb = " eliminated!"
-        if (eliminatedPrimes.filter(function(x){return x > ominosityBound}).length)
+        let verb = " eliminated!"
+        if (eliminatedPrimes.filter(function(x){return x > ominosityBound}).length) {
           verb = " vanquished!";
-        var list = String(eliminatedPrimes.pop());
+        }
+        let list = String(eliminatedPrimes.pop());
         if (eliminatedPrimes.length) {
           list = eliminatedPrimes.join(", ") + " and " + list;
         }
@@ -170,18 +162,13 @@ window.replayMove = function (board, direction) {
         self.actuator.updateCurrentlyUnlocked(self.tileTypes);
       }
 
-      for(var i = eliminatedIndices.length - 1; i >= 0; i--)
+      for(let i = eliminatedIndices.length - 1; i >= 0; i--) {
         self.tileTypes.splice(eliminatedIndices[i],1);
+      }
+      console.log(eliminatedIndices);
       self.actuator.updateCurrentlyUnlocked(self.tileTypes);
     } // mode 3
 
-    if (!this.movesAvailable()) { // Game over!
-      if ((this.gameMode & 3) == 3)
-        this.over = { tileTypes: this.tileTypes,
-                      tilesSeen: this.tilesSeen };
-      else
-        this.over = {};
-    }
 
     board.actuate();
   } // if (moved)
@@ -190,7 +177,6 @@ window.replayMove = function (board, direction) {
 window.replay = function (delay, rpstr) {
     const moves = rpstr.split(";");
     let count = 0
-    let gameReplay = new GameManager(4, KeyboardInputManager, HTMLActuator, LocalScoreManager);
     gameReplay.grid.cells = [
         [null,null,null,null],
         [null,null,null,null],
@@ -207,12 +193,18 @@ window.replay = function (delay, rpstr) {
         count++
         if (count >= moves.length-1) {
             clearInterval(interval)
+            console.log(gameReplay.tilesSeen)
+            gameReplay.actuator.message({
+                "tilesSeen":gameReplay.tilesSeen,
+                "tileTypes":gameReplay.tileTypes});
             return
         }
         let info = moves[count].split(",");
         let move = Number(info[0]);
         let tile = new Tile({x:Number(info[1]),y:Number(info[2])},Number(info[3]));
         window.replayMove(gameReplay, move);
+        gameReplay.moved = true;
+        gameReplay.actuator.updateCurrentlyUnlocked(gameReplay.tileTypes);
 
 
         gameReplay.grid.insertTile(tile);
