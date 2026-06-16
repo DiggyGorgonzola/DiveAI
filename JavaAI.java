@@ -7,18 +7,93 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-public class Main {
+public class JavaAI {
     public static void main(String[] args) {
-        for (int i = 0; i < 1; i++) {
-            AVG(5, 50000, 10000, true);
-        }
+        //WEIGHTS = ".04,.02,1.4,1.5,.033,0,0,.03,5"
+        //"116,22,0,0,75,66628,0,0,0,0,0,0,16657,0,0,0;2,3,5,11,29,16657;157815;.04,.02,1.4,1.5,.033,0,0,.03,5"
+        //"0,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0;2;0;.04,.02,1.4,1.5,.033,0,0,.03,5"
+        ArrayList<String[]> q = Batch(3, 100000, 10000, true, stringToGame("0,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0;2;0;.04,.02,1.4,1.5,.033,0,0,.045,5"));
+        SurvivalFunction(q,1.5);
+        Stuff(q, 14000);
+        int[] a = Mode(q, 100);
+        System.out.println("Mode is " + Integer.toString(a[0]) + " with count " + Integer.toString(a[1]) + ", step size " + Integer.toString(a[2]));
     }
 
+    /* returns the mode of a batch of games */
+    public static int[] Mode(ArrayList<String[]> args, int step) {
+        ArrayList<Integer> a = new ArrayList<>();
+        for (String[] i : args) {
+            a.add((int) Integer.parseInt(i[0]));
+        }
+        int[] buckets = new int[(int) (a.get(a.size() - 1) / step)];
+        for (int i : a) {
+            buckets[(int) (i / step) - 1]++;
+        }
+        int max = 0;
+        int max_value = 0;
+        for (int x = 0; x < buckets.length - 1; x++) {
+            if (buckets[x] > max_value) {
+                max = x * step;
+                max_value = buckets[x];
+            }
+        }
+        return new int[]{max, max_value, step};
+    }
+    
+
+
+    /* experimental function for finding the variance in probability between two batches of games */
+    public static void Stuff(ArrayList<String[]> args, int cutoff) {
+        ArrayList<Double> a = new ArrayList<>();
+        for (String[] i : args) {
+            double k = Double.parseDouble(i[0]);
+            if (k > cutoff) {
+                a.add(Math.log(Double.parseDouble(i[0]))/Math.log(Math.E));
+            }
+        }
+        double sum = 0;
+        for (double i : a) {
+            sum += i;
+        }
+        sum /= a.size();
+        double mean = sum;
+        double stdev = 0;
+        for (double i : a) {
+            stdev += Math.pow((i - mean),2);
+        }
+        stdev *= (double)1/(double) (a.size() - 1);
+        stdev = Math.pow(stdev, .5);
+        System.out.println("Mean of log scores: " + Double.toString(mean));
+        System.out.println("Stdev of log scores: " + Double.toString(stdev));
+    };
 
 
 
-    /* Runs N games and gives you metrics on them */
-    public static String[] AVG(int searchDepth, int num, int threshold,boolean debug)  {
+    /* function that prints the probability table of a batch! */
+    public static void SurvivalFunction(ArrayList<String[]> args, double threshold) {
+        ArrayList<Integer> nums = new ArrayList<>(args.size());
+        for (String[] q : args) {
+            nums.add((int) Integer.parseInt(q[0]));
+        }
+        int x = 2000;
+        while (x <= nums.get(nums.size()-1)*threshold) {
+            int l = 0;
+            for (int j = 0; j < nums.size();j++) {
+                if (nums.get(j) <= x) {
+                    l = j;
+                }
+            }
+            System.out.println("%-10s       %-10s       %-10s".formatted(Integer.toString((int) Math.round(x/1000)*1000), Double.toString((nums.size() - l-1) / (double)nums.size()), Integer.toString((int) (nums.size() - l-1))));
+            //System.out.println(Integer.toString((int) Math.round(x/1000)*1000) + "   " + Double.toString((nums.size() - l-1) / (double)nums.size()) + "   " + Integer.toString((int) (nums.size() - l-1)));
+            x *= threshold;
+        }
+
+    }
+
+   
+   
+    /* Runs a number of games and gives you metrics on them */
+    public static ArrayList<String[]> Batch(int searchDepth, int num, int threshold,boolean debug, Game starting)  {
         ArrayList<String[]> GameArrayList = new ArrayList<>();
         int x2 = 0;
         int max = 0;
@@ -27,7 +102,7 @@ public class Main {
                 cache1.clear();
                 cache2.clear();
             }
-            String[] h = Run(searchDepth, false);
+            String[] h = Run(searchDepth, false, starting);
             GameArrayList.add(h);
             int x = (int) Integer.parseInt(h[0])/threshold;
             if (x > x2) {
@@ -50,7 +125,6 @@ public class Main {
         }
 
         GameArrayList.sort((a,b) -> Integer.compare(Integer.parseInt(a[0]), Integer.parseInt(b[0])));
-
         long totalruntime = 0;
         double totalscore = 1;
         int totalmoves = 0;
@@ -74,26 +148,20 @@ public class Main {
         System.out.print("\n");
         System.out.println("A. mean moves of " + num + ": " + Integer.toString(totalmoves / num));
         System.out.println("A. mean runtime: " + Long.toString(totalruntime / num) + " ms");
-        return new String[]{"Hi"};
+        return GameArrayList;
     }
 
 
 
-    public static String[] Run(int searchDepth, boolean debug) {
-        int[] grid = {
-            2,0,0,0,
-            0,0,2,0,
-            0,0,0,0,
-            0,0,0,0
-        };
-        ArrayList<Integer> seeds = new ArrayList<>();
-        seeds.add(2);
+    /* runs a game */
+    public static String[] Run(int searchDepth, boolean debug, Game game) {
         String hello = "0,0,1,2;";
-        Game game = new Game(grid, seeds, 0, false, 0);
         Random rand = new Random();
         long time1 = System.nanoTime();
+        int s1 = 5000;
+        int s2 = 20000;
         while (!game.isOver()) {
-            float[] g = doBestMove(game, searchDepth);
+            float[] g = doBestMove(game, searchDepth + (game.score>s1?1:0) + (game.score>s2?1:0));
             game = MicroMove(game, (int) g[1]);
             hello += (int) g[1] + ",";
             int[][] zeros = game.getZeros();
@@ -116,18 +184,6 @@ public class Main {
 
 
 
-    /* Game evaluation weights */
-    private static final double EMPTY_CELLS = .02; // .02
-    private static final double ADJ_EMPTY_CELLS = 0.02; // .02
-    private static final double SCORE = 1.4; // 1.4
-    private static final double SEED_RATIO = 1.5; // 1.5
-    private static final double SEEDS_LENGTH = .033; // .033
-    private static final double MOVE_TO_SCORE = 0.;
-    private static final double ADJ_MERGES = 0;
-
-
-
-
     /* Game class */
     public static class Game {
         public int[] grid;
@@ -137,12 +193,14 @@ public class Main {
         public float eval;
         public boolean over;
         public int totalmoves;
-        public Game(int[] grid, ArrayList<Integer> seeds, int score, boolean changed, int totalmoves) {
+        public ArrayList<Double> weights;
+        public Game(int[] grid, ArrayList<Integer> seeds, int score, boolean changed, int totalmoves, ArrayList<Double> weights) {
             this.grid = grid;
             this.seeds = seeds;
             this.score = score;
             this.changed = changed;
             this.totalmoves = totalmoves;
+            this.weights = weights;
         }; 
         public String hash() {
             return Arrays.toString(grid) + "|" + seeds.toString();
@@ -184,33 +242,37 @@ public class Main {
             return h;
         }
         public double evaluate() {
-            /*
-            ArrayList<Integer> a = this.uniqueTiles();
-            int largest = a.get(a.size() - 1);
-            int divisor = a.get(Math.min(1, a.size() - 1));
-            */
+            double EMPTY_CELLS      = this.weights.get(0);
+            double ADJ_EMPTY_CELLS  = this.weights.get(1);
+            double SCORE            = this.weights.get(2);
+            double SEED_RATIO       = this.weights.get(3);
+            double SEEDS_LENGTH     = this.weights.get(4);
+            double ADJ_MERGES       = this.weights.get(5);
+            double MOVE_TO_SCORE    = this.weights.get(6);
+            double COMPOSITE_WEIGHT = this.weights.get(7);
+            double COMPOSITE_POWER  = this.weights.get(8);
 
-            /*
-            int max = seeds.get(0);
-            for (int i = 1; i < seeds.size(); i++) {
-                if (seeds.get(i) > max) {
-                    max = seeds.get(i);
-                }
-            }*/
+            int composite_val = 0;
+            for (int i : this.seeds) {
+                int a = smallestFactor(i);
+                composite_val += Math.pow((double) (a-1)/a,COMPOSITE_POWER) * i;
+            }
+
             ArrayList<Integer> v = new ArrayList<>();
             for (int s : seeds) {
                 v.add(s);
             }
             v.sort(Integer::compareTo);
-            double score = this.score;
+            double score            = this.score;
             return
                 EMPTY_CELLS * score * this.numZeros()
-                + ADJ_EMPTY_CELLS * this.numAdjacentZeros(this.getLargest()) * score
+                + ADJ_EMPTY_CELLS * score * this.numAdjacentZeros(this.getLargest())
                 + SCORE * score
-                + SEED_RATIO * v.get(this.seeds.size()-1) / v.get(Math.max(v.size()-2,0))
+                + (this.seeds.size() > 2?(SEED_RATIO * v.get(this.seeds.size()-1) / v.get(Math.max(v.size()-2,0))):0)
                 - SEEDS_LENGTH * score * this.seeds.size()
                 - ADJ_MERGES * score * this.getMerges()
                 + MOVE_TO_SCORE * score / this.totalmoves
+                - COMPOSITE_WEIGHT * composite_val
 
                 ;
         }
@@ -244,7 +306,9 @@ public class Main {
             return zeros;
         }
         public boolean isOver() {
-            return (this.getMerges() == 0 && this.numZeros() == 0);
+            return (this.getMerges() == 0 && this.numZeros() == 0) 
+            || (this.totalmoves > 100 && this.score < 4000)
+            ;
         }
         public String printgrd() {
             String h = "";
@@ -289,7 +353,7 @@ public class Main {
 
             System.arraycopy(grid, 0, newGrid, 0, 16);
 
-            return new Game(newGrid, new ArrayList<>(seeds), score, false, totalmoves);
+            return new Game(newGrid, new ArrayList<>(seeds), score, false, totalmoves, weights);
         }
     };
     
@@ -355,6 +419,45 @@ public class Main {
 
 
 
+    public static int smallestFactor(int n) {
+        if (n <= 3) {
+            return n;
+        }
+
+        if (n % 2 == 0) {
+            return 2;
+        }
+
+        for (int i = 3; i * i <= n; i += 2) {
+            if (n % i == 0) {
+                return i;
+            }
+        }
+
+        return n;
+    }
+
+
+
+    public static Game stringToGame(String n) {
+        String[] q = n.split(";");
+        String[] q0 = q[0].split(",");
+        int[] g = new int[16];
+        for (int i = 0; i < 16; i++) {
+            g[i] = Integer.parseInt(q0[i]);
+        }
+        ArrayList<Integer> s = new ArrayList<>();
+        for (String i : q[1].split(",")) {
+            s.add(Integer.parseInt(i));
+        };
+        int score = Integer.parseInt(q[2]);
+        ArrayList<Double> weights = new ArrayList<>();
+        for (String i : q[3].split(",")) {
+            weights.add((double) Double.parseDouble(i));
+        }
+        return new Game(g,s,score, false, 0, weights);
+    }
+
 
     /* move functions */
     public static Game conjugate(Game microgame) {
@@ -364,7 +467,7 @@ public class Main {
                 q[x * 4 + y] = microgame.grid[y * 4 + x];
             }
         }
-        return new Game(q,new ArrayList<>(microgame.seeds),microgame.score, microgame.changed, microgame.totalmoves);
+        return new Game(q,new ArrayList<>(microgame.seeds),microgame.score, microgame.changed, microgame.totalmoves, microgame.weights);
     };
 
 
@@ -376,7 +479,7 @@ public class Main {
                 q[x * 4 + y] = microgame.grid[x * 4 + (3 - y)];
             }
         }
-        return new Game(q,new ArrayList<>(microgame.seeds),microgame.score, microgame.changed, microgame.totalmoves);
+        return new Game(q,new ArrayList<>(microgame.seeds),microgame.score, microgame.changed, microgame.totalmoves, microgame.weights);
     };
 
 
@@ -521,7 +624,7 @@ public class Main {
                 continue;
             }
 
-            float score = (float)(expectNode(moved, depth - 1) + (float) (depth/50+ 1) * moved.evaluate());
+            float score = (float)(expectNode(moved, depth - 1) + (float) moved.evaluate());
             if (score > guh[0]) {
                 guh = new float[]{score, dir};
             }
